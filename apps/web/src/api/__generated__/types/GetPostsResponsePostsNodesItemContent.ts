@@ -6,6 +6,8 @@
  */
 import type { GetPostsResponsePostsNodesItemContentAuthor } from './GetPostsResponsePostsNodesItemContentAuthor';
 import type { GetPostsResponsePostsNodesItemContentProject } from './GetPostsResponsePostsNodesItemContentProject';
+import type { GetPostsResponsePostsNodesItemContentScope } from './GetPostsResponsePostsNodesItemContentScope';
+import type { GetPostsResponsePostsNodesItemContentStatus } from './GetPostsResponsePostsNodesItemContentStatus';
 import type { GetPostsResponsePostsNodesItemContentType } from './GetPostsResponsePostsNodesItemContentType';
 
 /**
@@ -16,10 +18,17 @@ export type GetPostsResponsePostsNodesItemContent = {
   createdAt: string;
   /** Author Information */
   author: GetPostsResponsePostsNodesItemContentAuthor;
+  /** Post Scope */
+  scope: GetPostsResponsePostsNodesItemContentScope;
   /** Project Information */
   project?: GetPostsResponsePostsNodesItemContentProject;
   /** Post ID */
   id: number;
+  /**
+   * Post Title
+   * @nullable
+   */
+  title?: string | null;
   /** Post Type */
   type: GetPostsResponsePostsNodesItemContentType;
   /** Post Content */
@@ -28,4 +37,6 @@ export type GetPostsResponsePostsNodesItemContent = {
   slug: string;
   /** Whether the question post has been resolved */
   resolved: boolean;
+  /** Post Status */
+  status: GetPostsResponsePostsNodesItemContentStatus;
 };
