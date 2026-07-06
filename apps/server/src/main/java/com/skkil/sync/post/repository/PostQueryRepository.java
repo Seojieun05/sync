@@ -36,8 +36,6 @@ public class PostQueryRepository {
   public Optional<PostDto> getPostBySlug(Long requesterId, String slug) {
     return dsl.select(post(requesterId))
         .from(POSTS)
-        .join(USERS)
-        .on(POSTS.AUTHOR_ID.eq(USERS.ID))
         .leftJoin(PROJECTS)
         .on(POSTS.PROJECT_ID.eq(PROJECTS.ID))
         .where(POSTS.SLUG.eq(slug).and(readableCondition(requesterId)))
@@ -49,8 +47,6 @@ public class PostQueryRepository {
     return (condition, orderFields, size) ->
         dsl.select(post(null))
             .from(POSTS)
-            .join(USERS)
-            .on(POSTS.AUTHOR_ID.eq(USERS.ID))
             .leftJoin(PROJECTS)
             .on(POSTS.PROJECT_ID.eq(PROJECTS.ID))
             .where(condition.and(publicPublishedCondition()))
@@ -91,6 +87,21 @@ public class PostQueryRepository {
     };
   }
 
+  public CursorPaginationDataFetcher<PostDto> getBookmarkedPosts(Long userId) {
+    return (condition, orderFields, size) ->
+        dsl.select(post(userId))
+            .select(POST_BOOKMARKS.CREATED_AT.as("bookmarkedAt"))
+            .from(POST_BOOKMARKS)
+            .join(POSTS)
+            .on(POST_BOOKMARKS.POST_ID.eq(POSTS.ID))
+            .leftJoin(PROJECTS)
+            .on(POSTS.PROJECT_ID.eq(PROJECTS.ID))
+            .where(condition.and(POST_BOOKMARKS.USER_ID.eq(userId)).and(visibleCondition()))
+            .orderBy(orderFields)
+            .limit(size)
+            .fetchInto(PostDto.class);
+  }
+
   public List<PostDto> getPostsByIds(List<Long> ids) {
     if (ids.isEmpty()) {
       return List.of();
@@ -100,8 +111,6 @@ public class PostQueryRepository {
         dsl
             .select(post(null))
             .from(POSTS)
-            .join(USERS)
-            .on(POSTS.AUTHOR_ID.eq(USERS.ID))
             .leftJoin(PROJECTS)
             .on(POSTS.PROJECT_ID.eq(PROJECTS.ID))
             .where(POSTS.ID.in(ids).and(publicPublishedCondition()))
@@ -131,10 +140,11 @@ public class PostQueryRepository {
         POSTS.SLUG.as("slug"),
         POSTS.TITLE.as("title"),
         POSTS.AUTHOR_ID.as("authorId"),
-        USERS.FULL_NAME.as("authorName"),
-        USERS.HANDLE.as("authorHandle"),
         PROJECTS.HANDLE.as("projectHandle"),
         PROJECTS.NAME.as("projectName"),
+        PROJECTS.DESCRIPTION.as("projectDescription"),
+        PROJECTS.WEBSITE_URL.as("projectWebsite"),
+        PROJECTS.IS_PUBLIC.as("projectIsPublic"),
         POSTS.CONTENT.as("content"),
         POSTS.CREATED_AT.as("createdAt"),
         POSTS.UPDATED_AT.as("updatedAt"),

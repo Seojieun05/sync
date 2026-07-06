@@ -18,21 +18,24 @@ export default function PostCardContainer({ slug }: PostCardContainerProps) {
   }
 
   const post = data.data;
+  const { summary } = post;
 
   return (
     <PostCard
-      id={post.id}
-      type={post.type as PostType}
-      scope={post.scope as PostScope}
-      status={post.status as PostStatus}
-      title={post.title}
-      author={post.author}
-      project={post.project}
+      id={summary.id}
+      slug={slug}
+      type={summary.type as PostType}
+      scope={summary.scope as PostScope}
+      status={summary.status as PostStatus}
+      title={summary.title}
+      author={summary.author}
+      project={summary.project}
       content={post.content}
-      likeCount={post.likeCount}
-      commentCount={post.commentCount}
+      likeCount={summary.likeCount}
+      commentCount={summary.commentCount}
       bookmarked={post.bookmarked}
-      createdAt={post.createdAt}
+      isAuthor={summary.isAuthor}
+      createdAt={summary.createdAt}
     />
   );
 }

@@ -4,39 +4,18 @@
  * sync
  * OpenAPI spec version: 0.0.1
  */
-import type { GetPostsResponsePostsNodesItemContentAuthor } from './GetPostsResponsePostsNodesItemContentAuthor';
-import type { GetPostsResponsePostsNodesItemContentProject } from './GetPostsResponsePostsNodesItemContentProject';
-import type { GetPostsResponsePostsNodesItemContentScope } from './GetPostsResponsePostsNodesItemContentScope';
-import type { GetPostsResponsePostsNodesItemContentStatus } from './GetPostsResponsePostsNodesItemContentStatus';
-import type { GetPostsResponsePostsNodesItemContentType } from './GetPostsResponsePostsNodesItemContentType';
+import type { GetPostsResponsePostsNodesItemContentSummary } from './GetPostsResponsePostsNodesItemContentSummary';
 
 /**
  * Node Content
  */
 export type GetPostsResponsePostsNodesItemContent = {
-  /** Creation Timestamp */
-  createdAt: string;
-  /** Author Information */
-  author: GetPostsResponsePostsNodesItemContentAuthor;
-  /** Post Scope */
-  scope: GetPostsResponsePostsNodesItemContentScope;
-  /** Project Information */
-  project?: GetPostsResponsePostsNodesItemContentProject;
-  /** Post ID */
-  id: number;
-  /**
-   * Post Title
-   * @nullable
-   */
-  title?: string | null;
-  /** Post Type */
-  type: GetPostsResponsePostsNodesItemContentType;
-  /** Post Content */
+  /** Post Summary */
+  summary: GetPostsResponsePostsNodesItemContentSummary;
+  /** Whether the current user bookmarked this post */
+  bookmarked: boolean;
+  /** Bookmarked At */
+  bookmarkedAt: string;
+  /** Content */
   content: string;
-  /** Post Slug */
-  slug: string;
-  /** Whether the question post has been resolved */
-  resolved: boolean;
-  /** Post Status */
-  status: GetPostsResponsePostsNodesItemContentStatus;
 };

@@ -13,12 +13,10 @@ import com.skkil.sync.post.model.Post;
 import com.skkil.sync.post.model.PostMediaFile;
 import com.skkil.sync.post.model.PostScope;
 import com.skkil.sync.post.model.PostStatus;
-import com.skkil.sync.post.model.PostSummary;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.post.repository.PostLikeRepository;
 import com.skkil.sync.post.repository.PostMediaFileRepository;
 import com.skkil.sync.post.repository.PostRepository;
-import com.skkil.sync.post.repository.PostSummaryRepository;
 import com.skkil.sync.project.model.Project;
 import com.skkil.sync.project.service.ProjectDomainService;
 import com.skkil.sync.user.model.User;
@@ -43,7 +41,6 @@ public class PostService {
 
   private final PostRepository postRepository;
   private final PostMediaFileRepository postMediaFileRepository;
-  private final PostSummaryRepository postSummaryRepository;
   private final PostLikeRepository postLikeRepository;
 
   public PostService(
@@ -53,7 +50,6 @@ public class PostService {
       PostContentMediaService contentMediaService,
       PostRepository postRepository,
       PostMediaFileRepository postMediaFileRepository,
-      PostSummaryRepository postSummaryRepository,
       PostLikeRepository postLikeRepository,
       ApplicationEventPublisher eventPublisher) {
     this.userDomainService = userDomainService;
@@ -62,7 +58,6 @@ public class PostService {
     this.contentMediaService = contentMediaService;
     this.postRepository = postRepository;
     this.postMediaFileRepository = postMediaFileRepository;
-    this.postSummaryRepository = postSummaryRepository;
     this.postLikeRepository = postLikeRepository;
     this.eventPublisher = eventPublisher;
   }
@@ -187,13 +182,7 @@ public class PostService {
     Post post =
         postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
 
-    PostSummary summary =
-        postSummaryRepository
-            .findById(postId)
-            .orElseGet(() -> new PostSummary(post, request.summary()));
-
-    summary.updateSummary(request.summary());
-    postSummaryRepository.save(summary);
+    post.updateSummary(request.summary());
   }
 
   @Transactional

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { forwardRef, useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   getGetAuthenticatedUserQueryKey,
@@ -10,8 +11,10 @@ import {
 } from '@/api/__generated__/profile/profile';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/lib/auth/client';
+import ROUTES from '@/util/routes';
 
 import { ChooseHandle } from './_components/ChooseHandle';
+import { RecommendedFollows } from './_components/RecommendedFollows';
 
 export interface OnboardingStepContentRef {
   submit: (onSuccess: () => void) => void;
@@ -36,6 +39,10 @@ const steps: {
     content: ChooseHandle,
   },
   {
+    id: 'follow',
+    content: RecommendedFollows,
+  },
+  {
     id: 'finished',
     content: null,
   },
@@ -55,18 +62,22 @@ export default function Onboarding() {
     isValid: true,
   });
 
-  const { mutate: updateProfile } = useUpdateProfile({
+  const { mutate: updateProfile, isPending: isFinishing } = useUpdateProfile({
     mutation: {
-      onSuccess: async (_data, _variables, _onMutateResult, context) =>
-        await refetchSession()
-          .then(() => {
-            context.client.invalidateQueries({
-              queryKey: getGetAuthenticatedUserQueryKey(),
-            });
-          })
-          .then(() => {
-            router.push('/');
-          }),
+      onSuccess: async (_data, _variables, _onMutateResult, context) => {
+        try {
+          await refetchSession();
+          context.client.invalidateQueries({
+            queryKey: getGetAuthenticatedUserQueryKey(),
+          });
+          router.replace(ROUTES.HOME());
+        } catch {
+          toast.error(t('errors.finish'));
+        }
+      },
+      onError: () => {
+        toast.error(t('errors.finish'));
+      },
     },
   });
 
@@ -155,7 +166,10 @@ export default function Onboarding() {
           )}
 
           {stepIndex === steps.length - 1 ? (
-            <Button onClick={finishedButtonClickHandler}>
+            <Button
+              isPending={isFinishing}
+              onClick={finishedButtonClickHandler}
+            >
               {t('actions.finish')}
             </Button>
           ) : (

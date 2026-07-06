@@ -1,6 +1,7 @@
 'use client';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EnvelopeIcon, PencilIcon } from '@phosphor-icons/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -17,6 +18,7 @@ import {
   useGetProfileByHandle,
   useUpdateProfile,
 } from '@/api/__generated__/profile/profile';
+import { useFollowUser, useUnfollowUser } from '@/api/__generated__/user/user';
 import { uploadFileToS3 } from '@/api/s3';
 import { ContactFields } from '@/components/feature/profile/contacts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -46,11 +48,10 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { useFollowUserMutation } from '@/features/user/api/follow-user';
-import { useUnfollowUserMutation } from '@/features/user/api/unfollow-user';
 import { useRequireAuth } from '@/hooks/use-require-auth';
 import { useSession } from '@/lib/auth/client';
 import SyncError, { ErrorCode } from '@/lib/error';
+import ROUTES from '@/util/routes';
 
 interface ProfileOverviewProps {
   handle: string;
@@ -108,7 +109,7 @@ export default function ProfileOverview({ handle }: ProfileOverviewProps) {
                   ) : (
                     <>
                       <FollowButton handle={handle} />
-                      <Link href={`/messages?to=${handle}`}>
+                      <Link href={ROUTES.MESSAGES(handle)}>
                         <Button variant="outline">{t('header.message')}</Button>
                       </Link>
                     </>
@@ -605,12 +606,20 @@ interface FollowButtonProps {
 function FollowButton({ handle }: FollowButtonProps) {
   const t = useTranslations('pages.profile.header');
 
+  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const { requireAuth } = useRequireAuth();
   const { data: profile, isPending } = useGetProfileByHandle(handle);
 
-  const { mutate: followUser } = useFollowUserMutation();
-  const { mutate: unfollowUser } = useUnfollowUserMutation();
+  const invalidateProfile = () =>
+    queryClient.invalidateQueries(getGetProfileByHandleQueryOptions(handle));
+
+  const { mutate: followUser } = useFollowUser({
+    mutation: { onSuccess: invalidateProfile },
+  });
+  const { mutate: unfollowUser } = useUnfollowUser({
+    mutation: { onSuccess: invalidateProfile },
+  });
 
   if (isPending || !profile) {
     return null;
@@ -620,35 +629,36 @@ function FollowButton({ handle }: FollowButtonProps) {
     return null;
   }
 
-  const targetUserId = String(profile.data.userId);
+  const followeeId = String(profile.data.userId);
 
   if (profile.data.isFollowing) {
     return (
       <Button
+        variant="outline"
         onClick={() => {
           if (!requireAuth({ intent: 'follow' })) {
             return;
           }
 
-          unfollowUser(targetUserId);
+          unfollowUser({ followeeId });
         }}
       >
         {t('unfollow')}
       </Button>
     );
-  } else {
-    return (
-      <Button
-        onClick={() => {
-          if (!requireAuth({ intent: 'follow' })) {
-            return;
-          }
-
-          followUser(targetUserId);
-        }}
-      >
-        {t('follow')}
-      </Button>
-    );
   }
+
+  return (
+    <Button
+      onClick={() => {
+        if (!requireAuth({ intent: 'follow' })) {
+          return;
+        }
+
+        followUser({ followeeId });
+      }}
+    >
+      {t('follow')}
+    </Button>
+  );
 }

@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useSession } from '@/lib/auth/client';
+import ROUTES from '@/util/routes';
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -72,7 +73,7 @@ export default function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
             return;
           }
 
-          router.push(redirectTo ?? '/');
+          router.replace(redirectTo ?? ROUTES.HOME());
         },
         onError: () => {
           toast.error(t('errors.invalid-credentials'));
@@ -143,7 +144,7 @@ export default function LoginForm({ onSuccess, redirectTo }: LoginFormProps) {
             </Button>
 
             <Button className="w-full" variant="link" type="button">
-              <Link href="/auth/register">{t('links.register.label')}</Link>
+              <Link href={ROUTES.REGISTER()}>{t('links.register.label')}</Link>
             </Button>
           </div>
         </FieldGroup>

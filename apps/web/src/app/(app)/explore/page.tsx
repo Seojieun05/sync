@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
-import PublicPostFeed from '@/components/feature/post/viewer/PublicPostFeed';
+import Posts from '../(home)/_components/Posts';
+import RecommendedUsers from './_components/RecommendedUsers';
 
 export default async function ExplorePage() {
   const t = await getTranslations('pages.explore');
@@ -12,7 +13,9 @@ export default async function ExplorePage() {
         <p className="text-muted-foreground text-sm">{t('description')}</p>
       </div>
 
-      <PublicPostFeed emptyMessage={t('empty')} />
+      <RecommendedUsers />
+
+      <Posts />
     </div>
   );
 }

@@ -19,7 +19,7 @@ public record CreatePostRequest(
     List<String> tags,
     @Valid Project project) {
 
-  public static record Content(String text, @NotBlank String json, List<Long> mediaIds) {}
+  public static record Content(@NotBlank String text, @NotBlank String json, List<Long> mediaIds) {}
 
   public static record Project(@NotBlank String handle) {}
 }

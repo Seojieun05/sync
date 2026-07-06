@@ -26,7 +26,8 @@ export default async function Post({ params }: PostProps) {
     const { data: post } = await queryClient.fetchQuery(
       getGetPostBySlugQueryOptions(slug),
     );
-    commentsEnabled = post.scope === 'PUBLIC' && post.status === 'PUBLISHED';
+    commentsEnabled =
+      post.summary.scope === 'PUBLIC' && post.summary.status === 'PUBLISHED';
   } catch (error) {
     if (error instanceof SyncError) {
       switch (error.code) {

@@ -53,6 +53,12 @@ public class SecurityConfig {
                     .hasRole("ADMIN")
                     .requestMatchers("/projects/*/invitations/**", "/invitations/**")
                     .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/users/recommendations")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/handles/availability")
+                    .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/posts/recommendations")
+                    .authenticated()
                     .requestMatchers(
                         HttpMethod.GET,
                         "/experiences/**",
@@ -62,8 +68,7 @@ public class SecurityConfig {
                         "/users/**",
                         "/team-building/**",
                         "/projects/**",
-                        "/contests/**",
-                        "/feed/**")
+                        "/contests/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/providers/**", "/projects/**")
                     .authenticated()
