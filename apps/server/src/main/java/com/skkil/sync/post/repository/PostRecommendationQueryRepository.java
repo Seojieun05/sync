@@ -6,6 +6,7 @@ import static com.skkil.sync.jooq.tables.UserFollowRelationships.USER_FOLLOW_REL
 
 import com.skkil.sync.common.util.pagination.interfaces.CursorPaginationDataFetcher;
 import com.skkil.sync.post.dto.data.PostRecommendationCandidate;
+import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostVisibility;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -39,7 +40,11 @@ public class PostRecommendationQueryRepository {
                 POSTS.CREATED_AT.as("createdAt"),
                 POSTS.LIKE_COUNT.as("likeCount"))
             .from(POSTS)
-            .where(condition.and(visibleCondition()).and(channelCondition))
+            .where(
+                condition
+                    .and(visibleCondition())
+                    .and(publicPublishedCondition())
+                    .and(channelCondition))
             .orderBy(orderFields)
             .limit(size)
             .fetchInto(PostRecommendationCandidate.class);
@@ -68,5 +73,9 @@ public class PostRecommendationQueryRepository {
 
   private Condition visibleCondition() {
     return POSTS.VISIBILITY.eq(PostVisibility.VISIBLE.name());
+  }
+
+  private Condition publicPublishedCondition() {
+    return POSTS.PROJECT_ID.isNull().and(POSTS.STATUS.eq(PostStatus.PUBLISHED.name()));
   }
 }

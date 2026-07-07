@@ -5,11 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 import { useGetPostsByProjectInfinite } from '@/api/__generated__/post/post';
-import {
-  PostScope,
-  PostStatus,
-  PostType,
-} from '@/components/feature/post/types/post';
+import { PostStatus, PostType } from '@/components/feature/post/types/post';
 import PostPreview from '@/components/feature/post/viewer/PostPreview';
 import { Button, LinkButton } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -90,15 +86,15 @@ export default function ProjectPosts({ handle }: ProjectPostsProps) {
                 id={post.content.summary.id}
                 slug={post.content.summary.slug}
                 type={post.content.summary.type as PostType}
-                scope={post.content.summary.scope as PostScope}
                 status={post.content.summary.status as PostStatus}
                 title={post.content.summary.title}
                 author={post.content.summary.author}
                 project={post.content.summary.project}
                 content={{ json: post.content.content, media: [] }}
-                likeCount={0}
-                commentCount={0}
-                bookmarked={false}
+                liked={post.content.summary.liked}
+                likeCount={post.content.summary.likeCount}
+                commentCount={post.content.summary.commentCount}
+                bookmarked={post.content.summary.bookmarked}
                 isAuthor={post.content.summary.isAuthor}
                 createdAt={post.content.summary.createdAt}
               />

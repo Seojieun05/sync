@@ -1,14 +1,13 @@
 'use client';
 
 import { DotsThreeIcon, SirenIcon } from '@phosphor-icons/react';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-import { useDeletePost } from '@/api/__generated__/post/post';
 import type { GetPostResponse } from '@/api/__generated__/types';
+import { useDeletePost } from '@/components/feature/post/hooks/useDeletePost';
 import { ProfileHoverCard } from '@/components/feature/profile/ProfileHoverCard';
 import {
   AlertDialog,
@@ -31,12 +30,7 @@ import {
 import { RelativeTime } from '@/components/ui/relative-time';
 import ROUTES from '@/util/routes';
 
-import {
-  PostScope,
-  PostStatus,
-  PostType,
-  isPublicPublishedPost,
-} from '../types/post';
+import { PostStatus, PostType } from '../types/post';
 import PostErrorBoundary from './PostErrorBoundary';
 import { PostCardActions } from './components/PostCardActions';
 import { PostTypeBadge } from './components/PostTypeBadge';
@@ -53,12 +47,12 @@ export interface PostViewCardProps {
   id: number;
   slug: string;
   type?: PostType;
-  scope?: PostScope;
   status?: PostStatus;
   title?: string | null;
   author: PostAuthorSummary;
   project?: PostProjectSummary;
   content: GetPostResponse['content'];
+  liked: boolean;
   likeCount: number;
   commentCount: number;
   bookmarked: boolean;
@@ -79,12 +73,12 @@ function PostViewCardContent({
   id,
   slug,
   type,
-  scope,
   status,
   title,
   author,
   project,
   content,
+  liked,
   likeCount,
   commentCount,
   bookmarked,
@@ -95,7 +89,6 @@ function PostViewCardContent({
   const router = useRouter();
   const editor = useReadOnlyPostEditor(content);
   const { contentClassName, bodyClassName } = getPostCardStyles(variant, type);
-  const showActions = isPublicPublishedPost(scope, status);
 
   const postPath = project?.handle
     ? ROUTES.PROJECT_POST(project.handle, slug)
@@ -111,7 +104,6 @@ function PostViewCardContent({
           postId={id}
           postPath={postPath}
           type={type}
-          scope={scope}
           status={status}
           author={author}
           project={project}
@@ -124,14 +116,13 @@ function PostViewCardContent({
       <CardContent className={contentClassName}>
         {title && <h3 className="text-lg font-semibold">{title}</h3>}
         <PostBody type={type} editor={editor} className={bodyClassName} />
-        {showActions && (
-          <PostCardActions
-            postId={id}
-            likeCount={likeCount}
-            commentCount={commentCount}
-            bookmarked={bookmarked}
-          />
-        )}
+        <PostCardActions
+          postId={id}
+          liked={liked}
+          likeCount={likeCount}
+          commentCount={commentCount}
+          bookmarked={bookmarked}
+        />
       </CardContent>
     </Card>
   );
@@ -141,7 +132,6 @@ function PostViewCardHeader({
   postId,
   postPath,
   type,
-  scope,
   status,
   author,
   project,
@@ -152,7 +142,6 @@ function PostViewCardHeader({
   postId: number;
   postPath: string;
   type?: PostType;
-  scope?: PostScope;
   status?: PostStatus;
   author: PostAuthorSummary;
   project?: PostProjectSummary;
@@ -165,7 +154,6 @@ function PostViewCardHeader({
   const tDelete = useTranslations('pages.posts.delete');
   const tCopyLink = useTranslations('pages.posts.copy-link');
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [reportOpen, setReportOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
@@ -189,13 +177,7 @@ function PostViewCardHeader({
           toast.success(tDelete('messages.success'));
           setDeleteOpen(false);
 
-          if (isPreview) {
-            queryClient.invalidateQueries({
-              predicate: (query) =>
-                typeof query.queryKey[1] === 'string' &&
-                query.queryKey[1].startsWith('/posts'),
-            });
-          } else {
+          if (!isPreview) {
             router.push(ROUTES.HOME());
           }
         },
@@ -214,11 +196,13 @@ function PostViewCardHeader({
     <>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <ProfileHoverCard
-            handle={author.handle}
-            name={author.name}
-            size={isPreview ? 'default' : 'sm'}
-          />
+          <div onClick={stopPropagation}>
+            <ProfileHoverCard
+              handle={author.handle}
+              name={author.name}
+              size={isPreview ? 'default' : 'sm'}
+            />
+          </div>
 
           <div className="flex flex-col">
             <span className="text-sm font-semibold">{author.name}</span>
@@ -231,10 +215,6 @@ function PostViewCardHeader({
 
           {status === PostStatus.DRAFT && (
             <Badge variant="outline">{tPost('status.DRAFT')}</Badge>
-          )}
-
-          {scope === PostScope.WORKSPACE && (
-            <Badge variant="outline">{tPost('scope.WORKSPACE')}</Badge>
           )}
 
           {project?.name && <Badge variant="secondary">{project.name}</Badge>}
@@ -279,11 +259,13 @@ function PostViewCardHeader({
       </div>
 
       {!isPreview && (
-        <ReportPostDialog
-          postId={postId}
-          open={reportOpen}
-          onOpenChange={setReportOpen}
-        />
+        <div onClick={stopPropagation}>
+          <ReportPostDialog
+            postId={postId}
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+          />
+        </div>
       )}
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>

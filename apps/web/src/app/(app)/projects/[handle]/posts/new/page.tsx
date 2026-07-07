@@ -1,18 +1,13 @@
 'use client';
 
-import {
-  redirect,
-  useParams,
-  useRouter,
-  useSearchParams,
-} from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { useCreatePost } from '@/api/__generated__/post/post';
 import { useGetProjectByHandle } from '@/api/__generated__/project/project';
 import PostEditor from '@/components/feature/post/editor/PostEditor';
-import { PostScope, PostType } from '@/components/feature/post/types/post';
-import { isAuthenticated, isOnboarded } from '@/lib/auth';
-import { useSession } from '@/lib/auth/client';
+import { PostType } from '@/components/feature/post/types/post';
+import { useAuthGuard } from '@/hooks/use-auth-guard';
 import ROUTES from '@/util/routes';
 
 function getInitialPostType(value: string | null): PostType {
@@ -27,7 +22,8 @@ export default function CreateProjectPostPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { handle } = useParams<{ handle: string }>();
-  const { data: session, isPending } = useSession();
+  const t = useTranslations('components.editor.scope');
+  useAuthGuard();
   const { data: projectData } = useGetProjectByHandle(handle);
 
   const { mutate: createPost, isPending: isCreatingPost } = useCreatePost({
@@ -38,31 +34,18 @@ export default function CreateProjectPostPage() {
     },
   });
 
-  if (!isPending) {
-    if (isAuthenticated(session) && !isOnboarded(session)) {
-      redirect(ROUTES.ONBOARDING());
-    }
-
-    if (!isAuthenticated(session)) {
-      redirect(ROUTES.LOGIN());
-    }
-  }
-
   return (
     <PostEditor
       type={getInitialPostType(searchParams.get('type'))}
-      scope={PostScope.WORKSPACE}
       isSubmitting={isCreatingPost || !projectData}
-      project={
-        projectData
-          ? { handle, name: projectData.data.summary.name }
-          : undefined
-      }
-      onSubmit={({ title, type, scope, status, tags, project, content }) => {
+      project={{
+        handle,
+        name: projectData?.data.summary.name ?? t('workspace-loading'),
+      }}
+      onSubmit={({ title, type, status, tags, project, content }) => {
         createPost({
           data: {
             type,
-            scope,
             status,
             title,
             tags,

@@ -1,6 +1,5 @@
 package com.skkil.sync.post.dto.summary;
 
-import com.skkil.sync.post.model.PostScope;
 import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.project.dto.summary.ProjectSummary;
@@ -15,7 +14,6 @@ public record PostSummary(
     String slug,
     @Nullable String title,
     PostType type,
-    PostScope scope,
     PostStatus status,
     UserSummary author,
     @Nullable ProjectSummary project,
@@ -23,4 +21,8 @@ public record PostSummary(
     boolean isAuthor,
     OffsetDateTime createdAt,
     Long likeCount,
-    Long commentCount) {}
+    boolean liked,
+    Long commentCount,
+    boolean bookmarked,
+    @Nullable OffsetDateTime bookmarkedAt,
+    @Nullable OffsetDateTime likedAt) {}
