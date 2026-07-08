@@ -1,40 +1,20 @@
 'use client';
 
-import { DotsThreeIcon, SirenIcon } from '@phosphor-icons/react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
 import type { GetPostResponse } from '@/api/__generated__/types';
-import { useDeletePost } from '@/components/feature/post/hooks/useDeletePost';
 import { ProfileHoverCard } from '@/components/feature/profile/ProfileHoverCard';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { RelativeTime } from '@/components/ui/relative-time';
 import ROUTES from '@/util/routes';
 
 import { PostStatus, PostType } from '../types/post';
 import PostErrorBoundary from './PostErrorBoundary';
 import { PostCardActions } from './components/PostCardActions';
+import { PostOverflowMenu } from './components/PostOverflowMenu';
 import { PostTypeBadge } from './components/PostTypeBadge';
-import { ReportPostDialog } from './components/ReportPostDialog';
 import { useReadOnlyPostEditor } from './hooks/useReadOnlyPostEditor';
 import type { PostAuthorSummary, PostProjectSummary } from './types';
 import {
@@ -102,6 +82,7 @@ function PostViewCardContent({
       <CardHeader>
         <PostViewCardHeader
           postId={id}
+          slug={slug}
           postPath={postPath}
           type={type}
           status={status}
@@ -130,6 +111,7 @@ function PostViewCardContent({
 
 function PostViewCardHeader({
   postId,
+  slug,
   postPath,
   type,
   status,
@@ -140,6 +122,7 @@ function PostViewCardHeader({
   variant,
 }: {
   postId: number;
+  slug: string;
   postPath: string;
   type?: PostType;
   status?: PostStatus;
@@ -149,143 +132,54 @@ function PostViewCardHeader({
   createdAt: string;
   variant: PostCardVariant;
 }) {
-  const t = useTranslations('pages.posts.report');
   const tPost = useTranslations('components.post');
-  const tDelete = useTranslations('pages.posts.delete');
-  const tCopyLink = useTranslations('pages.posts.copy-link');
-  const router = useRouter();
-  const [reportOpen, setReportOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const { mutate: deletePost, isPending: isDeleting } = useDeletePost();
 
   const isPreview = variant === 'preview';
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.origin + postPath);
-      toast.success(tCopyLink('messages.success'));
-    } catch {
-      toast.error(tCopyLink('messages.error'));
-    }
-  };
-
-  const handleDelete = () => {
-    deletePost(
-      { postId: String(postId) },
-      {
-        onSuccess: () => {
-          toast.success(tDelete('messages.success'));
-          setDeleteOpen(false);
-
-          if (!isPreview) {
-            router.push(ROUTES.HOME());
-          }
-        },
-        onError: () => {
-          toast.error(tDelete('messages.error'));
-        },
-      },
-    );
-  };
-
   const stopPropagation = isPreview
     ? (event: React.MouseEvent) => event.stopPropagation()
     : undefined;
+  const redirectAfterDelete =
+    variant === 'detail'
+      ? project?.handle
+        ? ROUTES.PROJECT(project.handle)
+        : ROUTES.HOME()
+      : undefined;
 
   return (
-    <>
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-2">
-          <div onClick={stopPropagation}>
-            <ProfileHoverCard
-              handle={author.handle}
-              name={author.name}
-              size={isPreview ? 'default' : 'sm'}
-            />
-          </div>
-
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">{author.name}</span>
-            <span className="text-muted-foreground text-xs">
-              @{author.handle} · <RelativeTime date={createdAt} />
-            </span>
-          </div>
-
-          {type && <PostTypeBadge type={type} />}
-
-          {status === PostStatus.DRAFT && (
-            <Badge variant="outline">{tPost('status.DRAFT')}</Badge>
-          )}
-
-          {project?.name && <Badge variant="secondary">{project.name}</Badge>}
-        </div>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Post options"
-              onClick={stopPropagation}
-            >
-              <DotsThreeIcon weight="bold" />
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent align="end" onClick={stopPropagation}>
-            <DropdownMenuItem onSelect={handleCopyLink}>
-              {tCopyLink('trigger')}
-            </DropdownMenuItem>
-            {isAuthor ? (
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => setDeleteOpen(true)}
-              >
-                {tDelete('trigger')}
-              </DropdownMenuItem>
-            ) : isPreview ? (
-              <DropdownMenuItem variant="destructive">Report</DropdownMenuItem>
-            ) : (
-              <DropdownMenuItem
-                variant="destructive"
-                onSelect={() => setReportOpen(true)}
-              >
-                <SirenIcon />
-                {t('trigger')}
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {!isPreview && (
+    <div className="flex items-start justify-between">
+      <div className="flex items-center gap-2">
         <div onClick={stopPropagation}>
-          <ReportPostDialog
-            postId={postId}
-            open={reportOpen}
-            onOpenChange={setReportOpen}
+          <ProfileHoverCard
+            handle={author.handle}
+            name={author.name}
+            size={isPreview ? 'default' : 'sm'}
           />
         </div>
-      )}
 
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent onClick={stopPropagation}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{tDelete('title')}</AlertDialogTitle>
-          </AlertDialogHeader>
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold">{author.name}</span>
+          <span className="text-muted-foreground text-xs">
+            @{author.handle} · <RelativeTime date={createdAt} />
+          </span>
+        </div>
 
-          <AlertDialogFooter>
-            <AlertDialogCancel>{tDelete('actions.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isDeleting}
-              onClick={handleDelete}
-            >
-              {tDelete('actions.confirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        {type && <PostTypeBadge type={type} />}
+
+        {status === PostStatus.DRAFT && (
+          <Badge variant="outline">{tPost('status.DRAFT')}</Badge>
+        )}
+
+        {project?.name && <Badge variant="secondary">{project.name}</Badge>}
+      </div>
+
+      <PostOverflowMenu
+        postId={postId}
+        slug={slug}
+        postPath={postPath}
+        isAuthor={isAuthor}
+        projectHandle={project?.handle}
+        redirectAfterDelete={redirectAfterDelete}
+      />
+    </div>
   );
 }
