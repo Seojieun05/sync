@@ -59,6 +59,8 @@ public class SecurityConfig {
                     .authenticated()
                     .requestMatchers(HttpMethod.GET, "/posts/recommendations")
                     .authenticated()
+                    .requestMatchers(HttpMethod.GET, "/projects/recommendations")
+                    .authenticated()
                     .requestMatchers("/search/**")
                     .authenticated()
                     .requestMatchers(
@@ -77,6 +79,7 @@ public class SecurityConfig {
                     .requestMatchers(
                         "/users/**",
                         "/profiles/me",
+                        "/profiles/me/**",
                         "/media/**",
                         "/providers/my/**",
                         "/preferences/**")
