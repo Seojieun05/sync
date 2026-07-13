@@ -1,6 +1,7 @@
 package com.skkil.sync.post.dto.summary;
 
 import com.skkil.sync.post.dto.response.GetPostResponse;
+import com.skkil.sync.post.model.PostScope;
 import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.project.dto.summary.ProjectSummary;
@@ -17,11 +18,13 @@ public record PostSummary(
     @Nullable String title,
     PostType type,
     PostStatus status,
+    PostScope scope,
     UserSummary author,
     @Nullable ProjectSummary project,
     boolean resolved,
     boolean isAuthor,
     OffsetDateTime createdAt,
+    OffsetDateTime updatedAt,
     Long likeCount,
     boolean liked,
     Long commentCount,

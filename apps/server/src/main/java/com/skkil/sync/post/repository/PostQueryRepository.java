@@ -12,6 +12,7 @@ import static com.skkil.sync.post.repository.pagination.CommentedPostCursorPagin
 
 import com.skkil.sync.common.util.pagination.interfaces.CursorPaginationDataFetcher;
 import com.skkil.sync.post.dto.data.PostDto;
+import com.skkil.sync.post.model.PostScope;
 import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.post.model.PostVisibility;
@@ -116,6 +117,34 @@ public class PostQueryRepository {
     };
   }
 
+  public CursorPaginationDataFetcher<PostDto> getDraftsByAuthor(
+      Long requesterId, PostType type, PostScope scope) {
+    return (condition, orderFields, size) -> {
+      Condition draftCondition =
+          condition
+              .and(POSTS.AUTHOR_ID.eq(requesterId))
+              .and(POSTS.STATUS.eq(PostStatus.DRAFT.name()))
+              .and(Conditions.visibleCondition());
+
+      if (type != null) {
+        draftCondition = draftCondition.and(POSTS.POST_TYPE.eq(type.name()));
+      }
+
+      if (scope != null) {
+        draftCondition = draftCondition.and(POSTS.SCOPE.eq(scope.name()));
+      }
+
+      return dsl.select(post(requesterId))
+          .from(POSTS)
+          .leftJoin(PROJECTS)
+          .on(POSTS.PROJECT_ID.eq(PROJECTS.ID))
+          .where(draftCondition)
+          .orderBy(orderFields)
+          .limit(size)
+          .fetchInto(PostDto.class);
+    };
+  }
+
   public CursorPaginationDataFetcher<PostDto> getBookmarkedPosts(
       Long userId, String projectHandle) {
     return (condition, orderFields, size) -> {
@@ -201,7 +230,8 @@ public class PostQueryRepository {
         POSTS
             .ID
             .in(ids)
-            .and(Conditions.publicPublishedCondition())
+            .and(Conditions.workspacePublishedCondition())
+            .and(Conditions.workspaceReadableCondition(requesterId))
             .and(PROJECTS.HANDLE.eq(projectHandle)));
   }
 
@@ -269,6 +299,7 @@ public class PostQueryRepository {
         POSTS.ID.as("id"),
         POSTS.POST_TYPE.as("type"),
         POSTS.STATUS.as("status"),
+        POSTS.SCOPE.as("scope"),
         POSTS.SLUG.as("slug"),
         POSTS.TITLE.as("title"),
         POSTS.AUTHOR_ID.as("authorId"),
@@ -301,7 +332,9 @@ public class PostQueryRepository {
     }
 
     private static Condition publicPublishedCondition() {
-      return visibleCondition().and(POSTS.PROJECT_ID.isNull()).and(publishedCondition());
+      return visibleCondition()
+          .and(POSTS.SCOPE.eq(PostScope.PUBLIC.name()))
+          .and(publishedCondition());
     }
 
     private static Condition workspacePublishedCondition() {
@@ -313,8 +346,8 @@ public class PostQueryRepository {
           .and(publishedCondition())
           .and(
               POSTS
-                  .PROJECT_ID
-                  .isNull()
+                  .SCOPE
+                  .eq(PostScope.PUBLIC.name())
                   .or(PROJECTS.IS_PUBLIC.isTrue())
                   .or(workspaceReadableCondition(requesterId)));
     }

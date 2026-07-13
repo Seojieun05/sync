@@ -130,7 +130,7 @@ export function TagInput({
       >
         {tags.map((tag) => (
           <ComboboxChip
-            key={tag.name}
+            key={`${tag.isProjectTag}:${tag.name}`}
             showRemove={false}
             className="bg-transparent px-0"
           >
@@ -138,7 +138,17 @@ export function TagInput({
               name={tag.name}
               isProjectTag={tag.isProjectTag}
               variant="secondary"
-              onRemove={() => onChange(tags.filter((t) => t.name !== tag.name))}
+              onRemove={() =>
+                onChange(
+                  tags.filter(
+                    (t) =>
+                      !(
+                        t.name === tag.name &&
+                        t.isProjectTag === tag.isProjectTag
+                      ),
+                  ),
+                )
+              }
             />
           </ComboboxChip>
         ))}

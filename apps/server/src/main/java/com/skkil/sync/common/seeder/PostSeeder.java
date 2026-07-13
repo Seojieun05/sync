@@ -2,6 +2,7 @@ package com.skkil.sync.common.seeder;
 
 import com.skkil.sync.post.dto.request.CreatePostRequest;
 import com.skkil.sync.post.dto.request.CreateProjectPostRequest;
+import com.skkil.sync.post.dto.request.PostContentRequest;
 import com.skkil.sync.post.model.Post;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.post.repository.PostRepository;
@@ -31,8 +32,8 @@ class PostSeeder {
       List<String> tags,
       String projectHandle) {
     if (projectHandle == null) {
-      CreatePostRequest.Content requestContent =
-          new CreatePostRequest.Content(content, EMPTY_TIPTAP_DOCUMENT, List.of());
+      PostContentRequest requestContent =
+          new PostContentRequest(content, EMPTY_TIPTAP_DOCUMENT, List.of());
 
       CreatePostRequest request =
           CreatePostRequest.builder()
@@ -45,8 +46,8 @@ class PostSeeder {
       return postService.createPost(author.getId(), request).slug();
     }
 
-    CreateProjectPostRequest.Content requestContent =
-        new CreateProjectPostRequest.Content(content, EMPTY_TIPTAP_DOCUMENT, List.of());
+    PostContentRequest requestContent =
+        new PostContentRequest(content, EMPTY_TIPTAP_DOCUMENT, List.of());
 
     CreateProjectPostRequest request =
         CreateProjectPostRequest.builder()

@@ -5,8 +5,9 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import { useCreateProjectPost } from '@/api/__generated__/post/post';
 import { useGetProjectByHandle } from '@/api/__generated__/project/project';
+import { type CreateProjectPostRequest } from '@/api/__generated__/types';
 import PostEditor from '@/components/feature/post/editor/PostEditor';
-import { PostType } from '@/components/feature/post/types/post';
+import { PostStatus, PostType } from '@/components/feature/post/types/post';
 import { useAuthGuard } from '@/hooks/use-auth-guard';
 import ROUTES from '@/util/routes';
 
@@ -29,7 +30,12 @@ export default function CreateProjectPostPage() {
   const { mutate: createProjectPost, isPending: isCreatingPost } =
     useCreateProjectPost({
       mutation: {
-        onSuccess: ({ data }) => {
+        onSuccess: ({ data }, variables) => {
+          if (variables.data?.status === PostStatus.DRAFT) {
+            router.replace(ROUTES.PROJECT_POST_EDIT(handle, data.slug));
+            return;
+          }
+
           router.push(ROUTES.PROJECT_POST(handle, data.slug));
         },
       },
@@ -57,7 +63,7 @@ export default function CreateProjectPostPage() {
               text: content.text,
               mediaIds: content.media.map((media) => media.id),
             },
-          },
+          } satisfies CreateProjectPostRequest,
         });
       }}
     />

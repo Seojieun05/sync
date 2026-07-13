@@ -140,15 +140,67 @@ public class TagService {
       throw new PostTagLimitExceededException();
     }
 
-    for (String name : filteredTagNames) {
+    attachGlobalTags(post, filteredTagNames);
+    attachProjectTags(post, project, filteredProjectTagNames);
+  }
+
+  @Transactional
+  public void replaceTags(Post post, List<String> tags, List<String> projectTags) {
+    List<PostTag> currentTags = List.copyOf(post.getTags());
+    List<String> filteredTags = filterTagNames(tags);
+    List<String> filteredProjectTags =
+        post.getProject() == null ? List.of() : filterTagNames(projectTags);
+    if (filteredTags.size() + filteredProjectTags.size() > PostConstants.MAX_TAGS_PER_POST) {
+      throw new PostTagLimitExceededException();
+    }
+
+    Set<String> requestedTagNames = Set.copyOf(filteredTags);
+    Set<String> requestedProjectTagNames = Set.copyOf(filteredProjectTags);
+
+    Set<String> currentTagNames =
+        currentTags.stream()
+            .map(PostTag::getTag)
+            .filter(tag -> tag.getProject() == null)
+            .map(Tag::getName)
+            .collect(Collectors.toSet());
+    Set<String> currentProjectTagNames =
+        currentTags.stream()
+            .map(PostTag::getTag)
+            .filter(tag -> tag.getProject() != null)
+            .map(Tag::getName)
+            .collect(Collectors.toSet());
+
+    for (PostTag postTag : currentTags) {
+      Tag tag = postTag.getTag();
+      Set<String> requestedNames =
+          tag.getProject() == null ? requestedTagNames : requestedProjectTagNames;
+      if (!requestedNames.contains(tag.getName())) {
+        post.removeTag(tag);
+        tagRepository.decrementPostCount(tag);
+      }
+    }
+
+    List<String> tagsToAdd =
+        filteredTags.stream().filter(tag -> !currentTagNames.contains(tag)).toList();
+    List<String> projectTagsToAdd =
+        filteredProjectTags.stream().filter(tag -> !currentProjectTagNames.contains(tag)).toList();
+
+    attachGlobalTags(post, tagsToAdd);
+    attachProjectTags(post, post.getProject(), projectTagsToAdd);
+  }
+
+  private void attachGlobalTags(Post post, List<String> names) {
+    for (String name : names) {
       Tag tag =
           tagRepository
               .findByNameAndProjectIsNull(name)
               .orElseGet(() -> tagRepository.save(Tag.builder().name(name).build()));
       attachTag(post, tag);
     }
+  }
 
-    for (String name : filteredProjectTagNames) {
+  private void attachProjectTags(Post post, @Nullable Project project, List<String> names) {
+    for (String name : names) {
       Tag tag =
           tagRepository
               .findByNameAndProject(name, project)

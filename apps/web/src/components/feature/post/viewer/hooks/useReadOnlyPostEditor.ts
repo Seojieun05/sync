@@ -9,7 +9,9 @@ import { deserialize } from '../../editor/utils/serializer';
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [] };
 
-export function useReadOnlyPostEditor(content: GetPostResponse['content']) {
+export function useReadOnlyPostEditor(
+  content: Pick<GetPostResponse['content'], 'json' | 'media'>,
+) {
   let doc: JSONContent;
   try {
     doc = deserialize(content.json, content.media);

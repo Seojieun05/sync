@@ -7,6 +7,7 @@
 import type { GetPostRecommendationsResponsePostsNodesItemContentAuthor } from './GetPostRecommendationsResponsePostsNodesItemContentAuthor';
 import type { GetPostRecommendationsResponsePostsNodesItemContentPreviewMediaItem } from './GetPostRecommendationsResponsePostsNodesItemContentPreviewMediaItem';
 import type { GetPostRecommendationsResponsePostsNodesItemContentProject } from './GetPostRecommendationsResponsePostsNodesItemContentProject';
+import type { GetPostRecommendationsResponsePostsNodesItemContentScope } from './GetPostRecommendationsResponsePostsNodesItemContentScope';
 import type { GetPostRecommendationsResponsePostsNodesItemContentStatus } from './GetPostRecommendationsResponsePostsNodesItemContentStatus';
 import type { GetPostRecommendationsResponsePostsNodesItemContentTagsItem } from './GetPostRecommendationsResponsePostsNodesItemContentTagsItem';
 import type { GetPostRecommendationsResponsePostsNodesItemContentType } from './GetPostRecommendationsResponsePostsNodesItemContentType';
@@ -44,6 +45,8 @@ export type GetPostRecommendationsResponsePostsNodesItemContent = {
   isAuthor: boolean;
   /** Creation Timestamp */
   createdAt: string;
+  /** 게시글 공개 범위 */
+  scope: GetPostRecommendationsResponsePostsNodesItemContentScope;
   /** 게시물에 첨부된 전체 미디어 수 */
   mediaCount: number;
   /** Post ID */
@@ -52,6 +55,8 @@ export type GetPostRecommendationsResponsePostsNodesItemContent = {
   previewMedia: GetPostRecommendationsResponsePostsNodesItemContentPreviewMediaItem[];
   /** Post Slug */
   slug: string;
+  /** Last Updated Timestamp */
+  updatedAt: string;
   /** Whether the question post has been resolved */
   resolved: boolean;
   /** Post Status */

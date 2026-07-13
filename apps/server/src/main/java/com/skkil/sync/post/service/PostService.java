@@ -1,19 +1,22 @@
 package com.skkil.sync.post.service;
 
-import com.skkil.sync.common.util.text.Slugify;
 import com.skkil.sync.media.model.Media;
 import com.skkil.sync.post.dto.request.CreatePostRequest;
 import com.skkil.sync.post.dto.request.CreateProjectPostRequest;
+import com.skkil.sync.post.dto.request.PostContentRequest;
 import com.skkil.sync.post.dto.request.UpdatePostRequest;
 import com.skkil.sync.post.dto.request.UpdatePostSummaryRequest;
+import com.skkil.sync.post.dto.request.UpdateProjectPostRequest;
 import com.skkil.sync.post.dto.response.CreatePostResponse;
-import com.skkil.sync.post.event.PostCreatedEvent;
+import com.skkil.sync.post.event.PostContentChangedEvent;
+import com.skkil.sync.post.event.PostPublishedEvent;
 import com.skkil.sync.post.exception.InvalidPostPublishRequestException;
 import com.skkil.sync.post.exception.PostNotFoundException;
 import com.skkil.sync.post.model.Post;
 import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.post.repository.PostRepository;
+import com.skkil.sync.post.util.PostSlugGenerator;
 import com.skkil.sync.project.model.Project;
 import com.skkil.sync.project.service.ProjectDomainService;
 import com.skkil.sync.user.model.User;
@@ -61,11 +64,9 @@ public class PostService {
         request.title(),
         request.type(),
         request.status(),
-        request.content().text(),
-        request.content().json(),
-        request.content().mediaIds(),
+        request.content(),
         request.tags(),
-        null,
+        List.of(),
         null);
   }
 
@@ -80,9 +81,7 @@ public class PostService {
         request.title(),
         request.type(),
         request.status(),
-        request.content().text(),
-        request.content().json(),
-        request.content().mediaIds(),
+        request.content(),
         request.tags(),
         request.projectTags(),
         project);
@@ -92,21 +91,19 @@ public class PostService {
       Long authorId,
       String title,
       PostType type,
-      PostStatus requestedStatus,
-      String contentText,
-      String contentJson,
-      List<Long> mediaIds,
+      @Nullable PostStatus status,
+      PostContentRequest content,
       List<String> tags,
       @Nullable List<String> projectTags,
       @Nullable Project project) {
-    PostStatus status = resolveStatus(requestedStatus);
-    validateCreatePostRequest(title, type, status);
+    status = status == null ? PostStatus.PUBLISHED : status;
+    projectTags = projectTags == null ? List.of() : projectTags;
 
     User author = userDomainService.getUserReference(authorId);
+    String slug = PostSlugGenerator.generate(author, title);
 
-    String slug = createSlug(author, title);
-
-    List<Media> mediaFiles = contentMediaService.resolveMediaFilesForCreate(authorId, mediaIds);
+    List<Media> mediaFiles =
+        contentMediaService.resolveMediaFilesForCreate(authorId, content.mediaIds());
 
     Post.PostBuilder postBuilder =
         Post.builder()
@@ -115,71 +112,116 @@ public class PostService {
             .type(type)
             .status(status)
             .title(title)
-            .content(contentJson);
-
+            .content(content.json());
     if (project != null) {
       postBuilder.project(project);
     }
-
     Post post = postBuilder.build();
-    post.updateContent(contentJson, contentText, mediaFiles.size());
-    tagService.addTagsToPost(post, project, tags, projectTags == null ? List.of() : projectTags);
+
+    post.updateContent(content.json(), content.text(), mediaFiles.size());
+    tagService.addTagsToPost(post, project, tags, projectTags);
 
     post = postRepository.save(post);
-
     contentMediaService.savePostMediaFiles(post, mediaFiles);
 
-    if (post.isPublished()) {
-      postRepository.incrementActivityCount(
-          author.getId(), LocalDate.ofInstant(post.getCreatedAt(), ZoneId.systemDefault()));
-    }
-
-    if (post.isPublished() && post.isPublic()) {
-      eventPublisher.publishEvent(new PostCreatedEvent(post.getId(), contentText));
-    }
+    applyPublishSideEffects(post, false, content.text());
 
     return new CreatePostResponse(post.getSlug());
-  }
-
-  private static PostStatus resolveStatus(PostStatus requestedStatus) {
-    return requestedStatus == null ? PostStatus.PUBLISHED : requestedStatus;
-  }
-
-  private static void validateCreatePostRequest(String title, PostType type, PostStatus status) {
-    if (status != PostStatus.PUBLISHED) {
-      return;
-    }
-
-    if (requiresTitle(type) && isBlank(title)) {
-      throw new InvalidPostPublishRequestException(
-          "Published article and question posts require a title.");
-    }
-  }
-
-  private static boolean requiresTitle(PostType type) {
-    return type != PostType.SHORT;
-  }
-
-  private static boolean isBlank(String value) {
-    return value == null || value.isBlank();
-  }
-
-  private static String createSlug(User author, String title) {
-    if (isBlank(title)) {
-      return String.format("%s-%d", author.getHandle(), System.currentTimeMillis());
-    }
-
-    return Slugify.slugify(title);
   }
 
   @Transactional
   @PreAuthorize("hasPermission(#postId, 'POST', 'EDIT')")
   public void updatePost(Long postId, UpdatePostRequest request) {
-    Post post =
-        postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
+    Post post = requirePost(postId, null);
 
-    post.updateContent(
-        request.content(), request.text(), contentMediaService.getMediaCountForPost(postId));
+    applyUpdate(
+        post,
+        request.title(),
+        request.type(),
+        request.status(),
+        request.content(),
+        request.tags(),
+        List.of());
+  }
+
+  @Transactional
+  @PreAuthorize("hasPermission(#postId, 'POST', 'EDIT')")
+  public void updateProjectPost(Long postId, String handle, UpdateProjectPostRequest request) {
+    Project project = projectDomainService.getProjectByHandle(handle);
+    Post post = requirePost(postId, project);
+
+    applyUpdate(
+        post,
+        request.title(),
+        request.type(),
+        request.status(),
+        request.content(),
+        request.tags(),
+        request.projectTags());
+  }
+
+  private Post getPostById(Long postId) {
+    return postRepository.findById(postId).orElseThrow(() -> new PostNotFoundException(postId));
+  }
+
+  /**
+   * Loads a post and enforces that it belongs to {@code expectedProject} ({@code null} meaning a
+   * global, non-project post) — the same distinction {@code createPost}/{@code createProjectPost}
+   * enforce via separate DTOs, so an author can't edit a project post's tags through the global
+   * endpoint (which has no project-tag field and would silently strip them) or vice versa.
+   */
+  private Post requirePost(Long postId, @Nullable Project expectedProject) {
+    Post post = getPostById(postId);
+    boolean belongsToExpectedProject =
+        expectedProject == null
+            ? post.getProject() == null
+            : post.getProject() != null
+                && post.getProject().getId().equals(expectedProject.getId());
+    if (!belongsToExpectedProject) {
+      throw new PostNotFoundException(postId);
+    }
+    return post;
+  }
+
+  private void applyUpdate(
+      Post post,
+      String title,
+      PostType type,
+      PostStatus status,
+      PostContentRequest content,
+      List<String> tags,
+      List<String> projectTags) {
+    if (post.isPublished() && status == PostStatus.DRAFT) {
+      throw new InvalidPostPublishRequestException("Published posts cannot be reverted to draft.");
+    }
+    boolean wasPublished = post.isPublished();
+
+    List<Media> mediaFiles =
+        contentMediaService.resolveMediaFilesForUpdate(
+            post.getAuthor().getId(), post.getId(), content.mediaIds());
+
+    post.update(title, type, status, content.json(), content.text(), mediaFiles.size());
+    tagService.replaceTags(post, tags, projectTags);
+    contentMediaService.replaceMediaFiles(post, mediaFiles);
+
+    applyPublishSideEffects(post, wasPublished, content.text());
+  }
+
+  /**
+   * Publishes the events that follow from a post becoming published (activity count) or having its
+   * content changed while published and public (summary/embedding refresh), for both creation and
+   * update.
+   */
+  private void applyPublishSideEffects(Post post, boolean wasPublished, String contentText) {
+    if (!wasPublished && post.isPublished()) {
+      eventPublisher.publishEvent(
+          new PostPublishedEvent(
+              post.getId(), post.getAuthor().getId(), LocalDate.now(ZoneId.systemDefault())));
+    }
+
+    if (post.isPublished() && post.isPublic()) {
+      eventPublisher.publishEvent(new PostContentChangedEvent(post.getId(), contentText));
+    }
   }
 
   @Transactional

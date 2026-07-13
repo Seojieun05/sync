@@ -26,12 +26,14 @@ import com.skkil.sync.config.SecurityConfig;
 import com.skkil.sync.post.dto.request.CreatePostRequest;
 import com.skkil.sync.post.dto.request.CreateProjectPostRequest;
 import com.skkil.sync.post.dto.request.UpdatePostRequest;
+import com.skkil.sync.post.dto.request.UpdateProjectPostRequest;
 import com.skkil.sync.post.dto.response.CreatePostResponse;
 import com.skkil.sync.post.service.PostService;
 import com.skkil.sync.post.snippets.CreatePostRequestSnippets;
 import com.skkil.sync.post.snippets.CreatePostResponseSnippets;
 import com.skkil.sync.post.snippets.CreateProjectPostRequestSnippets;
 import com.skkil.sync.post.snippets.UpdatePostRequestSnippets;
+import com.skkil.sync.post.snippets.UpdateProjectPostRequestSnippets;
 import java.util.function.Function;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -159,6 +161,41 @@ class PostControllerTests {
                 Function.identity(),
                 pathParameters(parameterWithName("postId").description("Post ID")),
                 UpdatePostRequestSnippets.getUpdatePostRequestFields()));
+  }
+
+  @Test
+  @DisplayName("[updateProjectPost] API 문서화 테스트")
+  @WithAuthenticatedUser
+  void updateProjectPost() throws Exception {
+    Long postId = 1L;
+    String handle = "project-handle";
+    UpdateProjectPostRequest request =
+        UpdateProjectPostRequestSnippets.getUpdateProjectPostRequest();
+
+    doNothing().when(postService).updateProjectPost(eq(postId), eq(handle), eq(request));
+
+    mockMvc
+        .perform(
+            patch("/projects/{handle}/posts/{postId}", handle, postId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonMapper.writeValueAsString(request)))
+        .andExpect(status().isNoContent())
+        .andDo(
+            document(
+                "UpdateProjectPost",
+                ResourceSnippetParameters.builder()
+                    .tag("post")
+                    .summary("Update Project Post")
+                    .description("프로젝트 글을 수정합니다.")
+                    .requestSchema(schema(UpdateProjectPostRequest.class.getSimpleName())),
+                preprocessRequest(modifyHeaders().set("Content-Type", "application/json")),
+                preprocessResponse(prettyPrint()),
+                Function.identity(),
+                pathParameters(
+                    parameterWithName("handle").description("프로젝트 핸들"),
+                    parameterWithName("postId").description("Post ID")),
+                UpdateProjectPostRequestSnippets.getUpdateProjectPostRequestFields()));
   }
 
   @Test

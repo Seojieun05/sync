@@ -7,6 +7,7 @@
 import type { GetPostsResponsePostsNodesItemContentAuthor } from './GetPostsResponsePostsNodesItemContentAuthor';
 import type { GetPostsResponsePostsNodesItemContentPreviewMediaItem } from './GetPostsResponsePostsNodesItemContentPreviewMediaItem';
 import type { GetPostsResponsePostsNodesItemContentProject } from './GetPostsResponsePostsNodesItemContentProject';
+import type { GetPostsResponsePostsNodesItemContentScope } from './GetPostsResponsePostsNodesItemContentScope';
 import type { GetPostsResponsePostsNodesItemContentStatus } from './GetPostsResponsePostsNodesItemContentStatus';
 import type { GetPostsResponsePostsNodesItemContentTagsItem } from './GetPostsResponsePostsNodesItemContentTagsItem';
 import type { GetPostsResponsePostsNodesItemContentType } from './GetPostsResponsePostsNodesItemContentType';
@@ -44,6 +45,8 @@ export type GetPostsResponsePostsNodesItemContent = {
   isAuthor: boolean;
   /** Creation Timestamp */
   createdAt: string;
+  /** 게시글 공개 범위 */
+  scope: GetPostsResponsePostsNodesItemContentScope;
   /** 게시물에 첨부된 전체 미디어 수 */
   mediaCount: number;
   /** Post ID */
@@ -52,6 +55,8 @@ export type GetPostsResponsePostsNodesItemContent = {
   previewMedia: GetPostsResponsePostsNodesItemContentPreviewMediaItem[];
   /** Post Slug */
   slug: string;
+  /** Last Updated Timestamp */
+  updatedAt: string;
   /** Whether the question post has been resolved */
   resolved: boolean;
   /** Post Status */

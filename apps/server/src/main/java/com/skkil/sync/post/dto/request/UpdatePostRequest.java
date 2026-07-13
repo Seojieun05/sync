@@ -1,9 +1,18 @@
 package com.skkil.sync.post.dto.request;
 
-import com.skkil.sync.post.constants.PostConstants;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+import com.skkil.sync.post.model.PostStatus;
+import com.skkil.sync.post.model.PostType;
+import com.skkil.sync.post.validator.ValidPublishablePost;
+import com.skkil.sync.post.validator.ValidPublishablePostValidator.PublishablePostRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
+@ValidPublishablePost
 public record UpdatePostRequest(
-    @NotBlank @Size(max = PostConstants.MAX_CONTENT_JSON_LENGTH) String content,
-    @NotBlank @Size(max = PostConstants.MAX_CONTENT_TEXT_LENGTH) String text) {}
+    String title,
+    @NotNull PostType type,
+    @NotNull PostStatus status,
+    @Valid @NotNull PostContentRequest content,
+    List<String> tags)
+    implements PublishablePostRequest {}

@@ -7,6 +7,7 @@
 import type { GetPostResponseSummaryAuthor } from './GetPostResponseSummaryAuthor';
 import type { GetPostResponseSummaryPreviewMediaItem } from './GetPostResponseSummaryPreviewMediaItem';
 import type { GetPostResponseSummaryProject } from './GetPostResponseSummaryProject';
+import type { GetPostResponseSummaryScope } from './GetPostResponseSummaryScope';
 import type { GetPostResponseSummaryStatus } from './GetPostResponseSummaryStatus';
 import type { GetPostResponseSummaryTagsItem } from './GetPostResponseSummaryTagsItem';
 import type { GetPostResponseSummaryType } from './GetPostResponseSummaryType';
@@ -44,6 +45,8 @@ export type GetPostResponseSummary = {
   isAuthor: boolean;
   /** Creation Timestamp */
   createdAt: string;
+  /** 게시글 공개 범위 */
+  scope: GetPostResponseSummaryScope;
   /** 게시물에 첨부된 전체 미디어 수 */
   mediaCount: number;
   /** Post ID */
@@ -52,6 +55,8 @@ export type GetPostResponseSummary = {
   previewMedia: GetPostResponseSummaryPreviewMediaItem[];
   /** Post Slug */
   slug: string;
+  /** Last Updated Timestamp */
+  updatedAt: string;
   /** Whether the question post has been resolved */
   resolved: boolean;
   /** Post Status */

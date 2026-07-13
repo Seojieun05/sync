@@ -5,6 +5,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.requestF
 
 import com.skkil.sync.common.util.restdocs.RestDocsUtils;
 import com.skkil.sync.post.dto.request.CreateProjectPostRequest;
+import com.skkil.sync.post.dto.request.PostContentRequest;
 import com.skkil.sync.post.model.PostStatus;
 import com.skkil.sync.post.model.PostType;
 import java.util.List;
@@ -14,8 +15,8 @@ import org.springframework.restdocs.payload.RequestFieldsSnippet;
 public class CreateProjectPostRequestSnippets {
 
   public static CreateProjectPostRequest getCreateProjectPostRequest() {
-    CreateProjectPostRequest.Content content =
-        new CreateProjectPostRequest.Content(
+    PostContentRequest content =
+        new PostContentRequest(
             "This is a post content.", "{\"text\": \"This is a post content.\"}", List.of(1L, 2L));
 
     return CreateProjectPostRequest.builder()

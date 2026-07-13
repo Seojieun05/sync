@@ -10,6 +10,7 @@ import com.skkil.sync.post.dto.response.GetPostResponse;
 import com.skkil.sync.post.dto.response.GetPostsResponse;
 import com.skkil.sync.post.exception.PostNotFoundException;
 import com.skkil.sync.post.mapper.PostAssembler;
+import com.skkil.sync.post.model.PostScope;
 import com.skkil.sync.post.model.PostType;
 import com.skkil.sync.post.repository.PostQueryRepository;
 import com.skkil.sync.post.repository.pagination.CommentedPostCursorPaginationProvider;
@@ -61,6 +62,13 @@ public class PostQueryService {
     var media = contentMediaService.getMediaFilesForPost(post.id());
 
     return postAssembler.toGetPostResponse(post, media, requesterId);
+  }
+
+  @Transactional(readOnly = true)
+  public GetPostsResponse getDrafts(
+      Long requesterId, PostType type, PostScope scope, CursorPaginationRequest pagination) {
+    return getPostsResponse(
+        requesterId, postQueryRepository.getDraftsByAuthor(requesterId, type, scope), pagination);
   }
 
   @Transactional(readOnly = true)

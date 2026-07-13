@@ -9,6 +9,7 @@ import com.skkil.sync.post.model.PostMediaFile;
 import com.skkil.sync.post.repository.PostMediaFileRepository;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -81,13 +82,37 @@ public class PostContentMediaService {
     return mediaFiles;
   }
 
+  public List<Media> resolveMediaFilesForUpdate(Long authorId, Long postId, List<Long> mediaIds) {
+    if (mediaIds == null || mediaIds.isEmpty()) {
+      return List.of();
+    }
+
+    Map<Long, Media> currentMedia =
+        postMediaFileRepository.findAllByPostIdOrderBySortOrderAsc(postId).stream()
+            .map(PostMediaFile::getMedia)
+            .collect(Collectors.toMap(Media::getId, media -> media));
+
+    List<Media> mediaFiles = new ArrayList<>();
+    for (Long mediaId : new LinkedHashSet<>(mediaIds)) {
+      Media media = currentMedia.get(mediaId);
+      if (media == null) {
+        media = mediaService.getUnlinkedMedia(authorId, mediaId);
+        media.markAsUploaded();
+      }
+      mediaFiles.add(media);
+    }
+
+    return mediaFiles;
+  }
+
+  public void replaceMediaFiles(Post post, List<Media> mediaFiles) {
+    postMediaFileRepository.deleteAllByPostId(post.getId());
+    savePostMediaFiles(post, mediaFiles);
+  }
+
   public void savePostMediaFiles(Post post, List<Media> mediaFiles) {
     for (int i = 0; i < mediaFiles.size(); i++) {
       postMediaFileRepository.save(new PostMediaFile(post, mediaFiles.get(i), i));
     }
-  }
-
-  public int getMediaCountForPost(Long postId) {
-    return postMediaFileRepository.countByPostId(postId);
   }
 }
