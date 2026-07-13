@@ -171,7 +171,8 @@ function TeammateRow({
     toast.error(fallbackMessage);
   };
 
-  const onRoleChange = (role: UpdateTeammateRequestRole) => {
+  const onRoleChange = (value: string) => {
+    const role = value as UpdateTeammateRequestRole;
     if (role === teammate.role) {
       return;
     }
