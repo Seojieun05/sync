@@ -69,12 +69,18 @@ export const server = ky.extend({
           return error;
         }
 
-        if (response.status === 403) {
-          return error;
+        try {
+          const body = (await response.clone().json()) as ErrorResponse;
+          if (body.code) {
+            throw new SyncError(body.detail, body.code);
+          }
+        } catch (responseError) {
+          if (responseError instanceof SyncError) {
+            throw responseError;
+          }
         }
 
-        const body = await response.json<ErrorResponse>();
-        throw new SyncError(body.detail, body.code);
+        return error;
       },
     ],
   },
