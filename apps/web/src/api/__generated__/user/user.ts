@@ -32,7 +32,7 @@ import type {
   GetFollowingParams,
   GetHandleAvailabilityParams,
   GetHandleAvailabilityResponse,
-  GetParams,
+  GetUserRecommendationsParams,
   GetUserRecommendationsResponse,
   SearchUsersParams,
   SearchUsersResponse,
@@ -421,17 +421,21 @@ export function useSearchUsers<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
-export type getResponse200 = {
+export type getUserRecommendationsResponse200 = {
   data: GetUserRecommendationsResponse;
   status: 200;
 };
 
-export type getResponseSuccess = getResponse200 & {
-  headers: Headers;
-};
-export type getResponse = getResponseSuccess;
+export type getUserRecommendationsResponseSuccess =
+  getUserRecommendationsResponse200 & {
+    headers: Headers;
+  };
+export type getUserRecommendationsResponse =
+  getUserRecommendationsResponseSuccess;
 
-export const getGetUrl = (params?: GetParams) => {
+export const getGetUserRecommendationsUrl = (
+  params?: GetUserRecommendationsParams,
+) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -451,64 +455,81 @@ export const getGetUrl = (params?: GetParams) => {
  * 팔로우할 만한 사용자 목록을 추천합니다.
  * @summary Get Recommendations
  */
-export const get = async (
-  params?: GetParams,
+export const getUserRecommendations = async (
+  params?: GetUserRecommendationsParams,
   options?: RequestInit,
-): Promise<getResponse> => {
-  return api<getResponse>(getGetUrl(params), {
-    ...options,
-    method: 'GET',
-  });
+): Promise<getUserRecommendationsResponse> => {
+  return api<getUserRecommendationsResponse>(
+    getGetUserRecommendationsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    },
+  );
 };
 
-export const getGetQueryKey = (params?: GetParams) => {
+export const getGetUserRecommendationsQueryKey = (
+  params?: GetUserRecommendationsParams,
+) => {
   return [`/users/recommendations`, ...(params ? [params] : [])] as const;
 };
 
-export const getGetQueryOptions = <
-  TData = Awaited<ReturnType<typeof get>>,
+export const getGetUserRecommendationsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getUserRecommendations>>,
   TError = ErrorType<unknown>,
 >(
-  params?: GetParams,
+  params?: GetUserRecommendationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof get>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getUserRecommendations>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof api>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetQueryKey(params);
+  const queryKey =
+    queryOptions?.queryKey ?? getGetUserRecommendationsQueryKey(params);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof get>>> = ({
-    signal,
-  }) => get(params, { signal, ...requestOptions });
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getUserRecommendations>>
+  > = ({ signal }) =>
+    getUserRecommendations(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof get>>,
+    Awaited<ReturnType<typeof getUserRecommendations>>,
     TError,
     TData
   > & { queryKey: DataTag<QueryKey, TData, TError> };
 };
 
-export type GetQueryResult = NonNullable<Awaited<ReturnType<typeof get>>>;
-export type GetQueryError = ErrorType<unknown>;
+export type GetUserRecommendationsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getUserRecommendations>>
+>;
+export type GetUserRecommendationsQueryError = ErrorType<unknown>;
 
-export function useGet<
-  TData = Awaited<ReturnType<typeof get>>,
+export function useGetUserRecommendations<
+  TData = Awaited<ReturnType<typeof getUserRecommendations>>,
   TError = ErrorType<unknown>,
 >(
-  params: undefined | GetParams,
+  params: undefined | GetUserRecommendationsParams,
   options: {
     query: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof get>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getUserRecommendations>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof get>>,
+          Awaited<ReturnType<typeof getUserRecommendations>>,
           TError,
-          Awaited<ReturnType<typeof get>>
+          Awaited<ReturnType<typeof getUserRecommendations>>
         >,
         'initialData'
       >;
@@ -518,20 +539,24 @@ export function useGet<
 ): DefinedUseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGet<
-  TData = Awaited<ReturnType<typeof get>>,
+export function useGetUserRecommendations<
+  TData = Awaited<ReturnType<typeof getUserRecommendations>>,
   TError = ErrorType<unknown>,
 >(
-  params?: GetParams,
+  params?: GetUserRecommendationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof get>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getUserRecommendations>>,
+        TError,
+        TData
+      >
     > &
       Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof get>>,
+          Awaited<ReturnType<typeof getUserRecommendations>>,
           TError,
-          Awaited<ReturnType<typeof get>>
+          Awaited<ReturnType<typeof getUserRecommendations>>
         >,
         'initialData'
       >;
@@ -541,14 +566,18 @@ export function useGet<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 };
-export function useGet<
-  TData = Awaited<ReturnType<typeof get>>,
+export function useGetUserRecommendations<
+  TData = Awaited<ReturnType<typeof getUserRecommendations>>,
   TError = ErrorType<unknown>,
 >(
-  params?: GetParams,
+  params?: GetUserRecommendationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof get>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getUserRecommendations>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof api>;
   },
@@ -560,14 +589,18 @@ export function useGet<
  * @summary Get Recommendations
  */
 
-export function useGet<
-  TData = Awaited<ReturnType<typeof get>>,
+export function useGetUserRecommendations<
+  TData = Awaited<ReturnType<typeof getUserRecommendations>>,
   TError = ErrorType<unknown>,
 >(
-  params?: GetParams,
+  params?: GetUserRecommendationsParams,
   options?: {
     query?: Partial<
-      UseQueryOptions<Awaited<ReturnType<typeof get>>, TError, TData>
+      UseQueryOptions<
+        Awaited<ReturnType<typeof getUserRecommendations>>,
+        TError,
+        TData
+      >
     >;
     request?: SecondParameter<typeof api>;
   },
@@ -575,7 +608,7 @@ export function useGet<
 ): UseQueryResult<TData, TError> & {
   queryKey: DataTag<QueryKey, TData, TError>;
 } {
-  const queryOptions = getGetQueryOptions(params, options);
+  const queryOptions = getGetUserRecommendationsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<
     TData,

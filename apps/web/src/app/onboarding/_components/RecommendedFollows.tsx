@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
-import { useGet as useGetUserRecommendations } from '@/api/__generated__/user/user';
+import { useGetUserRecommendations } from '@/api/__generated__/user/user';
 import {
   useFollowUser,
   useFollowedRecommendedUserIds,
