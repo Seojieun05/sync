@@ -18,6 +18,7 @@ import {
 } from '@/api/__generated__/types';
 import { useCancelProjectInvitation } from '@/components/feature/project/hooks/useProjectInvitation';
 import {
+  ProjectOwnerCannotBeModifiedError,
   useRemoveProjectTeammate,
   useUpdateProjectTeammate,
 } from '@/components/feature/project/hooks/useProjectTeammate';
@@ -52,7 +53,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useSession } from '@/lib/auth/client';
-import SyncError, { ErrorCode } from '@/lib/error';
 
 import AddTeammateDropdown from './AddTeammateDropdown';
 
@@ -160,10 +160,7 @@ function TeammateRow({
   const isPending = isUpdating || isRemoving;
 
   const handleError = (error: unknown, fallbackMessage: string) => {
-    if (
-      error instanceof SyncError &&
-      error.code === ErrorCode.PROJECT_OWNER_CANNOT_BE_MODIFIED
-    ) {
+    if (error instanceof ProjectOwnerCannotBeModifiedError) {
       toast.error(t('messages.owner-protected'));
       return;
     }
